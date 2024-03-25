@@ -167,7 +167,7 @@ function TicTacToe({initialState}) {
         gameState={gameState}
       />
       <TurnDisplay gameState={gameState} playerTurn={playerTurn} player={player} />
-      <GameOver gameResult={gameResult} />
+      <GameOver gameResult={gameResult} playerTurn={playerTurn} player={player}/>
       <Reset gameState={gameState} onReset={handleReset} />
       </div>
             )}
