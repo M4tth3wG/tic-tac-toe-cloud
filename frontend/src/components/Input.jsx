@@ -19,7 +19,7 @@ function Input({placeholder, onSubmit}){
             onChange={handleChange}
             placeholder={placeholder}
         />
-        <button onClick={onClick}>Submit</button>
+        <button class="submit-button" onClick={onClick}>Submit</button>
     </div>
   );
 };
