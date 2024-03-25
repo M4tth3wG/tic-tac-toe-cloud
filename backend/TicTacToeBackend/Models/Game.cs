@@ -5,7 +5,7 @@ namespace TicTacToeBackend.Models
     public class Game
     {
         public static readonly int boardSize = 9;
-        public static readonly string[] playerSigns = ["X", "O"];
+        public static readonly Dictionary<PlayerType, string> playerSigns = new Dictionary<PlayerType, string>() { { PlayerType.X_Player, "X" }, { PlayerType.O_Player, "O" } };
         private readonly List<List<int>> winningCombinations = [
                 [0, 1, 2],
                 [3, 4, 5],
@@ -17,8 +17,8 @@ namespace TicTacToeBackend.Models
                 [2, 4, 6]
             ];
 
-public Guid Id { get; } = Guid.NewGuid();
-        public Dictionary<string, (string, int)> Players { get; set; } = new Dictionary<string, (string, int)>();
+        public Guid Id { get; } = Guid.NewGuid();
+        public Dictionary<string, (string, PlayerType)> Players { get; set; } = new Dictionary<string, (string, PlayerType)>();
 
         public GameState State { get; set; } = new GameState();
 
@@ -27,20 +27,42 @@ public Guid Id { get; } = Guid.NewGuid();
             set { State.Status = value; } 
         }
 
-        public bool CheckWin()
+        public GameResultType? Result
         {
-            var isWin = winningCombinations.Any(
+            get { return State.Result; }
+            set { State.Result = value; }
+        }
+
+        public bool CheckIfFinished()
+        {
+            var isFinished = winningCombinations.Any(
                 combination => combination
                     .All(index => State.CurrentPlayerSign
                             .Equals(State.Board[index]
                 )));
 
-            if (isWin)
+            if (isFinished)
             {
                 State.Status = GameStatusType.Finished;
+                Result = State.CurrentPlayerType == PlayerType.X_Player ? GameResultType.X_PlayerWon : GameResultType.O_PlayerWon;
             }
 
-            return isWin;
+            isFinished = CheckForDraw();
+
+            return isFinished;
+        }
+
+        public bool CheckForDraw()
+        {
+            var isDraw = State.Board.All(cell => cell != null);
+
+            if (isDraw)
+            {
+                State.Status = GameStatusType.Finished;
+                Result = GameResultType.Draw;
+            }
+
+            return isDraw;
         }
     }
 }

@@ -138,16 +138,23 @@ Game GetCurrentGame(string sessionId, IGamesContext dataContext)
 Game AsignToGame(string sessionId, string nick, IGamesContext dataContext)
 {
     var pendingGame = GetPendingGame(dataContext);
+    var currentGame = GetCurrentGame(sessionId, dataContext);
+
+    if (currentGame != null && currentGame.Status != GameStatusType.Finished)
+    {
+        currentGame.Status = GameStatusType.Finished;
+        currentGame.Result = GameResultType.Canceled;
+    }
 
     if (pendingGame == null)
     {
         pendingGame = new Game();
-        pendingGame.Players.Add(sessionId, (nick, 0));
+        pendingGame.Players.Add(sessionId, (nick, PlayerType.X_Player));
         dataContext.AddGame(pendingGame);
     }
     else
     {
-        pendingGame.Players.Add(sessionId, (nick, 1));
+        pendingGame.Players.Add(sessionId, (nick, PlayerType.O_Player));
         pendingGame.Status = GameStatusType.InProgress;
         dataContext.UpdateGame(pendingGame);
     }
@@ -161,14 +168,14 @@ GameState UpdateGame(int cellIndex, string sessionId, IGamesContext dataContext)
     var currentState = currentGame.State;
     var (_, playerId) = currentGame.Players[sessionId];
 
-    if (playerId == currentState.CurrentPlayerId
+    if (playerId == currentState.CurrentPlayerType
         && cellIndex >= 0 && cellIndex < Game.boardSize
         && currentState.Board[cellIndex] == null
         && currentState.Status == GameStatusType.InProgress)
     {
         currentState.Board[cellIndex] = Game.playerSigns[playerId];
-        currentGame.CheckWin();
-        currentState.CurrentPlayerId = (currentState.CurrentPlayerId + 1) % 2;
+        currentGame.CheckIfFinished();
+        currentState.CurrentPlayerType = (PlayerType)(((int)currentState.CurrentPlayerType + 1) % 2);
         dataContext.UpdateGame(currentGame);
         return currentState;
     }
