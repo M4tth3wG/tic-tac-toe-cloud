@@ -145,10 +145,6 @@ Game AsignToGame(string sessionId, string nick, IGamesContext dataContext)
         pendingGame.Players.Add(sessionId, (nick, 0));
         dataContext.AddGame(pendingGame);
     }
-    else if (pendingGame.Players.ContainsKey(sessionId))
-    {
-        return pendingGame;
-    }
     else
     {
         pendingGame.Players.Add(sessionId, (nick, 1));
