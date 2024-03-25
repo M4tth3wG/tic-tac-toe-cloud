@@ -58,9 +58,13 @@ function TicTacToe({initialState}) {
   const [gameState, setGameState] = useState(null);
   const [player, setPlayer] = useState(null);
 
+  // useEffect(() =>{
+  //   initGame(initialState)
+  // }, [initialState]);
+
   useEffect(() =>{
     initGame(initialState)
-  }, [initialState]);
+  }, []);
 
 
   const handleTileClick = (index) => {

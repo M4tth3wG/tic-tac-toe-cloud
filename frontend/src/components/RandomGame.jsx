@@ -7,23 +7,23 @@ function RandomGame(){
     const [currentNick, setCurrentNick] = useState('')
     const [initialState, setInitialState] = useState(null);
 
-    //  useEffect(() => {
-    //     if (currentNick !== '') {
-    //         getNewRandomGame().then(result => {
-    //             setInitialState(result);
-    //         }).catch(error => {
-    //             console.error('Error initializing game:', error);
-    //         });
-    //     }
-    // }, [currentNick]);
-
-    useEffect(() => {
-        getNewRandomGame().then(result => {
-            setInitialState(result);
-        }).catch(error => {
-            console.error('Error initializing game:', error);
-        });
+     useEffect(() => {
+        if (currentNick !== '') {
+            getNewRandomGame().then(result => {
+                setInitialState(result);
+            }).catch(error => {
+                console.error('Error initializing game:', error);
+            });
+        }
     }, [currentNick]);
+
+    // useEffect(() => {
+    //     getNewRandomGame().then(result => {
+    //         setInitialState(result);
+    //     }).catch(error => {
+    //         console.error('Error initializing game:', error);
+    //     });
+    // }, [currentNick]);
     
     function handleNickSubmit(nick) {
         setNick(nick)
