@@ -15,9 +15,24 @@ builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(10);
-    options.Cookie.HttpOnly = true;
+    options.Cookie.HttpOnly = false;
     options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin",
+        builder =>
+        {
+            builder.WithOrigins("http://localhost:3000")
+                   .AllowAnyMethod()
+                   .AllowAnyHeader()
+                   .AllowCredentials();
+        });
+});
+
 
 builder.Services.AddSingleton<IGamesContext, GamesRepository>();
 
@@ -30,12 +45,19 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors("AllowSpecificOrigin");
+
 app.UseSession();
 
 app.UseHttpsRedirection();
 
 app.MapGet("/nick/{nick}", (string nick, HttpContext httpContext) =>
 {
+    if(nick == null || nick.Trim().Length == 0)
+    {
+        return Results.BadRequest();
+    }
+    
     httpContext.Session.SetString("nick", nick);
 
     return Results.Ok();
@@ -52,8 +74,9 @@ app.MapGet("/newGame/random", (HttpContext httpContext, IGamesContext dataContex
     }
 
     var game = AsignToGame(sessionId, nick, dataContext);
+    var (_, playerId) = game.Players[sessionId];
 
-    return Results.Ok(game.State);
+    return Results.Ok(new {state=game.State, playerSign = Game.playerSigns[playerId] });
 })
 .WithOpenApi();
 
@@ -64,6 +87,7 @@ app.MapGet("/currentGame", (HttpContext httpContext, IGamesContext dataContext) 
     if (sessionId == null)
     {
         return Results.BadRequest();
+
     }
 
     var currentGame = GetCurrentGame(sessionId, dataContext);
@@ -120,6 +144,10 @@ Game AsignToGame(string sessionId, string nick, IGamesContext dataContext)
         pendingGame = new Game();
         pendingGame.Players.Add(sessionId, (nick, 0));
         dataContext.AddGame(pendingGame);
+    }
+    else if (pendingGame.Players.ContainsKey(sessionId))
+    {
+        return pendingGame;
     }
     else
     {

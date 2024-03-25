@@ -17,7 +17,7 @@ namespace TicTacToeBackend.Models
                 [2, 4, 6]
             ];
 
-public Guid Id { get; } = new Guid();
+public Guid Id { get; } = Guid.NewGuid();
         public Dictionary<string, (string, int)> Players { get; set; } = new Dictionary<string, (string, int)>();
 
         public GameState State { get; set; } = new GameState();

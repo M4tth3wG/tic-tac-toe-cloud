@@ -1,4 +1,6 @@
-﻿namespace TicTacToeBackend.Models
+﻿using TicTacToeBackend.Models;
+
+namespace TicTacToeBackend.Models
 {
     public class GameState
     {
@@ -16,8 +18,8 @@
     }
 
     public enum GameStatusType {
-        Pending,
-        InProgress,
-        Finished
+        Pending = 0,
+        InProgress = 1,
+        Finished = 2
     }
 }
