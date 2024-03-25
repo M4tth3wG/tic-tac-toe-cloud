@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import Board from "./Board";
+import TurnDisplay from "./TurnDisplay";
 import GameOver from "./GameOver";
-import GameState from "./GameState";
+import GameState from "../enums/GameState";
 import Reset from "./Reset";
 import gameOverSoundAsset from "../sounds/game_over.wav";
 import clickSoundAsset from "../sounds/click.wav";
@@ -11,6 +12,8 @@ const gameOverSound = new Audio(gameOverSoundAsset);
 gameOverSound.volume = 0.2;
 const clickSound = new Audio(clickSoundAsset);
 clickSound.volume = 0.5;
+
+const samplingRate = 500;
 
 const winningCombinations = [
   //Rows
@@ -56,11 +59,8 @@ function TicTacToe({initialState}) {
   const [playerTurn, setPlayerTurn] = useState(null);
   const [strikeClass, setStrikeClass] = useState();
   const [gameState, setGameState] = useState(null);
+  const [gameResult, setGameResult] = useState(null);
   const [player, setPlayer] = useState(null);
-
-  // useEffect(() =>{
-  //   initGame(initialState)
-  // }, [initialState]);
 
   useEffect(() =>{
     initGame(initialState)
@@ -79,15 +79,13 @@ function TicTacToe({initialState}) {
     sendMove(index);
   };
 
+  const handleReset = () => {
+      window.location.reload();
+  };
+
   useEffect(() => {
     checkWinner(tiles, setStrikeClass, setGameState);
   }, [tiles]);
-
-  // useEffect(() => {
-  //   if (tiles.some((tile) => tile !== null)) {
-  //     clickSound.play();
-  //   }
-  // }, [tiles]);
 
   useEffect(() => {
     if (playerTurn !== null){
@@ -110,7 +108,7 @@ function TicTacToe({initialState}) {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 1000);
+    const interval = setInterval(fetchData, samplingRate);
     return () => clearInterval(interval);
   }, []);
 
@@ -124,6 +122,7 @@ function TicTacToe({initialState}) {
     setTiles(jsonData.board)
     setPlayerTurn(jsonData.currentPlayerSign)
     setGameState(jsonData.status)
+    setGameResult(jsonData.result)
   }
 
   function initGame(jsonData){
@@ -143,7 +142,7 @@ function TicTacToe({initialState}) {
             credentials: 'include'
         });
         const jsonData = await response.json();
-        updateGame(jsonData); // TODO test 
+        updateGame(jsonData);
       } catch (error) {
         console.error('Error updating data:', error);
       }
@@ -153,7 +152,7 @@ function TicTacToe({initialState}) {
     <div>
       {gameState === GameState.pending ? (
                 <div>
-                  <p>Waiting for opponent...</p>
+                  <h1>Waiting for opponent...</h1>
                 </div>
             ) : (
                 
@@ -165,9 +164,11 @@ function TicTacToe({initialState}) {
         onTileClick={handleTileClick}
         strikeClass={strikeClass}
         player={player}
+        gameState={gameState}
       />
-      <GameOver gameState={gameState} />
-      {/* <Reset gameState={gameState} onReset={handleReset} /> */}
+      <TurnDisplay gameState={gameState} playerTurn={playerTurn} player={player} />
+      <GameOver gameResult={gameResult} playerTurn={playerTurn} player={player}/>
+      <Reset gameState={gameState} onReset={handleReset} />
       </div>
             )}
     </div>

@@ -16,14 +16,6 @@ function RandomGame(){
             });
         }
     }, [currentNick]);
-
-    // useEffect(() => {
-    //     getNewRandomGame().then(result => {
-    //         setInitialState(result);
-    //     }).catch(error => {
-    //         console.error('Error initializing game:', error);
-    //     });
-    // }, [currentNick]);
     
     function handleNickSubmit(nick) {
         setNick(nick)
@@ -47,7 +39,7 @@ function RandomGame(){
                 initialState ? (
                     <TicTacToe initialState={initialState} />
                 ) : (
-                    <p>Loading...</p>
+                    <h1>Loading...</h1>
                 )
             )}
         </div>

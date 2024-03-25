@@ -1,6 +1,8 @@
-function Tile({ className, value, onClick, playerTurn, player }) {
+import GameState from "../enums/GameState";
+
+function Tile({ className, value, onClick, playerTurn, player, gameState }) {
   let hoverClass = '';
-  if (value == null && playerTurn === player && playerTurn != null) {
+  if (value == null && playerTurn === player && playerTurn != null && gameState === GameState.inProgress) {
     hoverClass = `${playerTurn.toLowerCase()}-hover`;
   }
   return (

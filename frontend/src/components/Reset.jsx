@@ -1,4 +1,4 @@
-import GameState from "./GameState";
+import GameState from "../enums/GameState";
 
 function Reset({ gameState, onReset }) {
   if (gameState === GameState.inProgress) {

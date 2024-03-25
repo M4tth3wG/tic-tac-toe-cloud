@@ -1,15 +1,19 @@
-import GameState from "./GameState";
+import GameResult from "../enums/GameResult";
 
-function GameOver({ gameState }) {
-  switch (gameState) {
-    case GameState.inProgress:
-      return <></>;
-    case GameState.playerOWins:
-      return <div className="game-over">O Wins</div>;
-    case GameState.playerXWins:
-      return <div className="game-over">X Wins</div>;
-    case GameState.draw:
+function GameOver({ gameResult, playerTurn, player }) {
+  switch (gameResult) {
+    case GameResult.x_PlayerWon:
+    case GameResult.o_PlayerWon:
+      if(player !== playerTurn){
+        return <div className="game-over">You won</div>;
+      }
+      else {
+        return <div className="game-over">You lost</div>;
+      }    
+    case GameResult.draw:
       return <div className="game-over">Draw</div>;
+    case GameResult.canceled:
+      return <div className="game-over">Game canceled</div>;
     default:
       return <></>;
   }
