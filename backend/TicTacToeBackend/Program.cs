@@ -21,12 +21,14 @@ builder.Services.AddSession(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 
+var clientDomain = Environment.GetEnvironmentVariable("API_DOMAIN");
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowStrictOrigin",
         builder =>
         {
-            builder.WithOrigins("http://54.144.51.154:3000") // TODO
+            builder.WithOrigins($"{clientDomain}:3000")
                    .AllowAnyMethod()
                    .AllowAnyHeader()
                    .AllowCredentials();
