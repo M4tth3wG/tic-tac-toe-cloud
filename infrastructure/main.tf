@@ -98,11 +98,26 @@ resource "aws_instance" "app_server" {
     destination = "/home/ec2-user/compose.yaml"
   }
 
+  # provisioner "remote-exec" {
+  #   inline = [
+  #     "cd /home/ec2-user",
+  #     "export API_DOMAIN='http://$(curl -s ifconfig.me)'",
+  #     "sudo docker-compose up -d"
+  #   ]
+  # }
+
+  provisioner "file" {
+    source      = "../docker-compose.service"
+    destination = "/tmp/docker-compose.service"
+  }
+
   provisioner "remote-exec" {
     inline = [
-      "cd /home/ec2-user",
-      "export API_DOMAIN='http://$(curl -s ifconfig.me)/'",
-      "sudo docker-compose up -d"
+      "sudo mv /tmp/docker-compose.service /etc/systemd/system/docker-compose.service", # Move with elevated permissions
+      "sudo chown root:root /etc/systemd/system/docker-compose.service",                # Ensure correct ownership
+      "sudo systemctl daemon-reload",
+      "sudo systemctl enable docker-compose.service",
+      "sudo systemctl start docker-compose.service"
     ]
   }
 }
