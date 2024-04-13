@@ -3,6 +3,8 @@ version: '3.8'
 services:
   backend:
     image: m4tth3wg/tic-tac-toe-cloud-backend:latest
+    environment:
+      - API_DOMAIN=${API_DOMAIN}
     ports:
       - 8080:8080
 
