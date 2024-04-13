@@ -101,6 +101,7 @@ resource "aws_instance" "app_server" {
   provisioner "remote-exec" {
     inline = [
       "cd /home/ec2-user",
+      "export API_DOMAIN='http://$(curl -s ifconfig.me)/'",
       "sudo docker-compose up -d"
     ]
   }
