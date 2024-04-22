@@ -9,89 +9,27 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1" # Set AWS provider configuration for the us-east-1 region.
+  region = var.region # Set AWS provider configuration for the us-east-1 region.
 }
 
-resource "local_file" "docker_run_config" {
-  content = jsonencode({
-    AWSEBDockerrunVersion = 2
-    containerDefinitions = [
-      {
-        name      = "backend"
-        image     = "m4tth3wg/tic-tac-toe-cloud-backend:latest"
-        memory    = 128
-        essential = true
-        portMappings = [{
-          hasPort       = 8080 # potential error
-          containerPort = 8080
-        }]
-      },
-      {
-        name      = "frontend"
-        image     = "m4tth3wg/tic-tac-toe-cloud-frontend:latest"
-        memory    = 128
-        essential = true
-      }
-    ]
-  })
-  filename = "${path.module}/Dockerrun.aws.json"
+resource "aws_iam_instance_profile" "ec2_eb_profile" {
+  name = "tictactoe-ec2-profile"
+  role = "LabRole"
 }
 
-# Compress the docker run config file
-# Refer to data referenece setup
-
-# Create s3 bucket to store docker run config
-resource "aws_s3_bucket" "docker_run_bucket" {
-  bucket = "docker-run-bucket"
+# Create s3 bucket to store docker compose
+resource "aws_s3_bucket" "app_bucket" {
+  bucket = "tic-tac-toe-bucket-m4tth3wg"
   tags   = local.tags
-}
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "bucket_encryption" {
-  bucket = aws_s3_bucket.docker_run_bucket.id
-
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
-
-resource "aws_s3_bucket_acl" "bucket_acl" {
-  bucket = aws_s3_bucket.docker_run_bucket.id
-  acl    = "private"
 }
 
 # Create s3 object from the compressed docker run config
 
-resource "aws_s3_object" "docker_run_object" {
-  key    = "${local.docker_run_config_sha}.zip"
-  bucket = aws_s3_bucket.docker_run_bucket.id
-  source = data.archive_file.docker_run.output_path
+resource "aws_s3_object" "docker_compose_object" {
+  bucket = aws_s3_bucket.app_bucket.id
+  key    = "compose.yaml"
+  source = "./compose.yaml"
   tags   = local.tags
-}
-
-# Create instance profile
-resource "aws_iam_instance_profile" "ec2_eb_profile" {
-  name = "ec2-profile"
-  role = aws_iam_role.ec2_role.name
-  tags = local.tags
-}
-
-resource "aws_iam_role" "ec2_role" {
-  name               = "ec2-role"
-  assume_role_policy = data.aws_iam_policy_document.assume_policy.json
-  managed_policy_arns = [
-    "arn:aws:iam::aws:policy/AWSElasticBeanstalkWebTier",
-    "arn:aws:iam::aws:policy/AWSElasticBeanstalkMulticontainerDocker",
-    "arn:aws:iam::aws:policy/AWSElasticBeanstalkWorkerTier",
-    "arn:aws:iam::aws:policy/EC2InstanceProfileForImageBuilderECRContainerBuilds"
-  ]
-
-  inline_policy {
-    name   = "eb-application-permissions"
-    policy = data.aws_iam_policy_document.permissions.json
-  }
-  tags = local.tags
 }
 
 # Create eb app
@@ -103,22 +41,23 @@ resource "aws_elastic_beanstalk_application" "eb_app" {
 
 # Create eb version
 resource "aws_elastic_beanstalk_application_version" "eb_version" {
-  name        = local.docker_run_config_sha
+  name        = var.app_version
   application = aws_elastic_beanstalk_application.eb_app.name
   description = "application version created by terraform"
-  bucket      = aws_s3_bucket.docker_run_bucket.id
-  key         = aws_s3_object.docker_run_object.id
+  bucket      = aws_s3_bucket.app_bucket.id
+  key         = aws_s3_object.docker_compose_object.id
   tags        = local.tags
 }
 
 # Create eb environment
 resource "aws_elastic_beanstalk_environment" "eb_env" {
-  name          = "eb-env"
-  application   = aws_elastic_beanstalk_application.eb_app.name
-  platform_arn  = "arn:aws:elasticbeanstalk:us-east-1::platform/Multi-container Docker running on 64bit Amazon Linux/2.26.4" # potential error
+  name        = "eb-env"
+  application = aws_elastic_beanstalk_application.eb_app.name
   version_label = aws_elastic_beanstalk_application_version.eb_version.name
-  cname_prefix  = "tic-tac-toe-app"
-  tags          = local.tags
+  solution_stack_name = "64bit Amazon Linux 2 v3.8.0 running Docker"
+  tier                = "WebServer"
+  cname_prefix        = var.cname_prefix
+  tags                = local.tags
 
   setting {
     namespace = "aws:autoscaling:launchconfiguration"
@@ -133,15 +72,20 @@ resource "aws_elastic_beanstalk_environment" "eb_env" {
   }
 
   setting {
-    namespace = "aws:autoscaling:asg"
-    name      = "MaxSize"
-    value     = var.max_instance_count
+    namespace = "aws:autoscaling:launchconfiguration"
+    name      = "SecurityGroups"
+    value     = var.security_group
   }
 
   setting {
-    namespace = "aws:elasticbeanstalk:environment"
-    name      = "LoadBalancerType"
-    value     = "application"
+    namespace = "aws:ec2:vpc"
+    name      = "VPCId"
+    value     = var.vpc_id
+  }
+  setting {
+    namespace = "aws:ec2:vpc"
+    name      = "Subnets"
+    value     = var.public_subnet
   }
 
   setting {
@@ -151,23 +95,49 @@ resource "aws_elastic_beanstalk_environment" "eb_env" {
   }
 
   setting {
-    namespace = "aws:elasticbeanstalk:environment:process:default"
-    name      = "MatcherHTTPCode"
-    value     = 200
+    namespace = "aws:ec2:vpc"
+    name      = "AssociatePublicIpAddress"
+    value     = "true"
   }
 
   setting {
-    namespace = "aws:elasticbeanstalk:environment:process:default"
-    name      = "HealthCheckPath"
-    value     = "/docs"
+    namespace = "aws:elasticbeanstalk:environment"
+    name      = "EnvironmentType"
+    value     = "LoadBalanced"
   }
 
-  dynamic "setting" {
-    for_each = var.environment_variables_map
-    content {
-      namespace = "aws:elasticbeanstalk:application:environment"
-      name      = setting.key
-      value     = setting.value
-    }
+  setting {
+    namespace = "aws:autoscaling:asg"
+    name      = "MinSize"
+    value     = var.min_instance_count
+  }
+
+  setting {
+    namespace = "aws:autoscaling:asg"
+    name      = "MaxSize"
+    value     = var.max_instance_count
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "API_DOMAIN"
+    value     = "http://${var.cname_prefix}.${var.region}.elasticbeanstalk.com"
+  }
+
+  # listener
+
+  setting {
+    namespace = "aws:elb:loadbalancer"
+    name      = "SecurityGroups"
+    value     = var.security_group
+  }
+
+  # backend listener
+
+  setting {
+    namespace = "aws:elb:listener:8080"
+    name      = "InstancePort"
+    value     = 8080
   }
 }
+

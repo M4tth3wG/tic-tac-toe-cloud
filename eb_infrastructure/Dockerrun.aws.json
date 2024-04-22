@@ -1,1 +1,0 @@
-{"AWSEBDockerrunVersion":2,"containerDefinitions":[{"essential":true,"image":"m4tth3wg/tic-tac-toe-cloud-backend:latest","memory":128,"name":"backend","portMappings":[{"containerPort":8080,"hasPort":8080}]},{"essential":true,"image":"m4tth3wg/tic-tac-toe-cloud-frontend:latest","memory":128,"name":"frontend"}]}
