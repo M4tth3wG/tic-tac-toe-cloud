@@ -28,7 +28,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowStrictOrigin",
         builder =>
         {
-            builder.WithOrigins($"{clientDomain}:3000")
+            builder.WithOrigins($"{clientDomain}")
                    .AllowAnyMethod()
                    .AllowAnyHeader()
                    .AllowCredentials();
