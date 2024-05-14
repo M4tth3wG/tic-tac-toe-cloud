@@ -7,6 +7,7 @@ import Reset from "./Reset";
 import gameOverSoundAsset from "../sounds/game_over.wav";
 import clickSoundAsset from "../sounds/click.wav";
 import { API_URL } from "../App";
+import { refreshAccessToken } from "../App";
 
 const gameOverSound = new Audio(gameOverSoundAsset);
 gameOverSound.volume = 0.2;
@@ -28,7 +29,6 @@ const winningCombinations = [
   { combo: [0, 4, 8], strikeClass: "strike-diagonal-1" },
   { combo: [2, 4, 6], strikeClass: "strike-diagonal-2" },
 ];
-const storedToken = localStorage.getItem("jwtToken");
 
 function checkWinner(tiles, setStrikeClass, setGameState) {
   for (const { combo, strikeClass } of winningCombinations) {
@@ -60,6 +60,7 @@ function TicTacToe({initialState}) {
   const [gameState, setGameState] = useState(null);
   const [gameResult, setGameResult] = useState(null);
   const [player, setPlayer] = useState(null);
+  const [storedToken, setStoredToken] = useState(localStorage.getItem("jwtToken"));
 
   useEffect(() =>{
     initGame(initialState)
@@ -93,6 +94,11 @@ function TicTacToe({initialState}) {
   }, [playerTurn]);
 
   useEffect(() => {
+    if(!storedToken){
+      setStoredToken(localStorage.getItem("jwtToken"));
+      return
+    }
+    
     const fetchData = async () => {
       try {
         const response = await fetch(`${API_URL}/currentGame`, {
@@ -102,6 +108,16 @@ function TicTacToe({initialState}) {
               'Authorization': `Bearer ${storedToken}`,
             }
         });
+
+        if (response.status === 401){
+            const refreshToken = localStorage.getItem("refreshToken");
+            const newToken = refreshAccessToken(refreshToken);
+
+            localStorage.setItem("jwtToken", newToken);
+            setStoredToken(newToken)
+            return
+        }
+
         const jsonData = await response.json();
         updateGame(jsonData);
       } catch (error) {
@@ -146,6 +162,16 @@ function TicTacToe({initialState}) {
               'Authorization': `Bearer ${storedToken}`,
             }
         });
+
+        if (response.status === 401){
+            const refreshToken = localStorage.getItem("refreshToken");
+            const newToken = refreshAccessToken(refreshToken);
+
+            localStorage.setItem("jwtToken", newToken);
+            setStoredToken(newToken);
+            return;
+        }
+
         const jsonData = await response.json();
         updateGame(jsonData);
       } catch (error) {

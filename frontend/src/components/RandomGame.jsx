@@ -2,14 +2,11 @@ import Input from "./Input";
 import { API_URL } from "../App.js";
 import { useState, useEffect} from "react";
 import TicTacToe from "./TicTacToe.jsx";
+import refreshAccessToken from "../App.js"
 
 function RandomGame(){
     const [initialState, setInitialState] = useState(null);
-    const [storedToken, setStoredToken] = useState(null);
-
-    useEffect (() => {
-        setStoredToken(localStorage.getItem("jwtToken"));
-    }, []);
+    const [storedToken, setStoredToken] = useState(localStorage.getItem("jwtToken"));
 
     function onNewRandomGame() {
         if(!storedToken){
@@ -24,31 +21,42 @@ function RandomGame(){
         }
     };
 
+    async function getNewRandomGame(storedToken){
+        const response = await fetch(`${API_URL}/newGame/random`, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                'Authorization': `Bearer ${storedToken}`,
+                }
+            })
+
+        if (response.status === 401){
+            const refreshToken = localStorage.getItem("refreshToken");
+            const newToken = refreshAccessToken(refreshToken);
+
+            localStorage.setItem("jwtToken", newToken);
+            setStoredToken(newToken)
+            return 
+        }
+
+        const game = await response.json();
+        return game;
+}
+
     return (
         <div>
             {!initialState ? (
                 <div>
-                    {/* {<Input placeholder="Enter nick" onSubmit={handleNickSubmit} />} */}
                     <button onClick={onNewRandomGame}> New random game </button>
                 </div>
             ) :
             (
-                    <TicTacToe initialState={initialState} />
+                <TicTacToe initialState={initialState} />
             )}
         </div>
     );
 }
 
-async function getNewRandomGame(storedToken){
-    const response = await fetch(`${API_URL}/newGame/random`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-              'Authorization': `Bearer ${storedToken}`,
-            }
-        })
-    const game = await response.json();
-    return game;
-}
+
 
 export default RandomGame;

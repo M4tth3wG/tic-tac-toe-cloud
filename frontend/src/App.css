@@ -128,8 +128,10 @@ h1 {
   color: white;
 }
 
+
 h1 {
   text-align: center;
+}
 }
 
 .board {
@@ -252,7 +254,7 @@ h1 {
   font-size: 2em;
 }
 
-.submit-button {
+button {
   padding: 15px 30px;
   margin: 10px;
   margin-top: 40px;
@@ -265,10 +267,8 @@ h1 {
   transition: background-color 0.3s ease;
 }
 
-.submit-button:hover {
+button:hover {
   background-color: #005f85;
-}
-
   margin: 10px;
   margin-top: 20px;
   border: 2px solid #0074a6;
@@ -276,21 +276,4 @@ h1 {
   background-color: #242730;
   color: white;
   font-size: 1.5em;
-}
-
-.submit-button {
-  padding: 15px 30px;
-  margin: 10px;
-  margin-top: 20px;
-  background-color: #0074a6;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  font-size: 1em;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.submit-button:hover {
-  background-color: #005f85;
 }

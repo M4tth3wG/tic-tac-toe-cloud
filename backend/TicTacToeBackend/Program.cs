@@ -168,6 +168,11 @@ Game AsignToGame(string user_id, string nick, IGamesContext dataContext)
     {
         currentGame.Status = GameStatusType.Finished;
         currentGame.Result = GameResultType.Canceled;
+
+        if (currentGame.Id == pendingGame.Id)
+        {
+            pendingGame = null;
+        }
     }
 
     if (pendingGame == null)
