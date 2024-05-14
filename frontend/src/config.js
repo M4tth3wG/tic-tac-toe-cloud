@@ -1,15 +1,16 @@
 const config = {};
 config.cognito = {};
 
-
-config.cognito.clientId = "2d706rph2kvfgnnh4mhlo8vg21";
-config.cognito.clientSecret = "tka9daq0cvf7b6v6dqro91cin88vbqinsfgd8415aj00fov3jvr";
-config.cognito.loginUrl = "https://tictactoecloud.auth.us-east-1.amazoncognito.com/oauth2/authorize?client_id=2d706rph2kvfgnnh4mhlo8vg21&response_type=code&scope=email+openid+phone&redirect_uri=http%3A%2F%2Flocalhost%3A3000";
+config.cognito.clientId = "iqven205cvn65dis12ucaj2f0";
+config.cognito.clientSecret =
+  "1n4sqhqo8b8i5u6euh95uf3aetqoh97udc66484oitdmt41d6teq";
+config.cognito.loginUrl =
+  "https://tic-tac-toe-adrian-cloud.auth.us-east-1.amazoncognito.com/login?client_id=iqven205cvn65dis12ucaj2f0&response_type=code&scope=email+openid+phone&redirect_uri=http%3A%2F%2Flocalhost%3A3000";
 config.cognito.logoutUrl =
-  "https://tictactoecloud.auth.us-east-1.amazoncognito.com/logout?client_id=2d706rph2kvfgnnh4mhlo8vg21&logout_uri=http%3A%2F%2Flocalhost%3A3000";
+  "https://tictactoecloud.auth.us-east-1.amazoncognito.com/logout?client_id=iqven205cvn65dis12ucaj2f0&logout_uri=http%3A%2F%2Flocalhost%3A3000";
 config.cognito.tokenEndpoint =
-  "https://tictactoecloud.auth.us-east-1.amazoncognito.com/oauth2/token";
+  "https://tic-tac-toe-adrian-cloud.auth.us-east-1.amazoncognito.com/oauth2/token";
 config.cognito.redirectUri = "http://localhost:3000";
-config.cognito.cognitoPoolId = "us-east-1_mGRi4LHMM";
+config.cognito.cognitoPoolId = "us-east-1_5UwBIwmRq";
 
 module.exports = config;
