@@ -12,9 +12,7 @@ const gameOverSound = new Audio(gameOverSoundAsset);
 gameOverSound.volume = 0.2;
 const clickSound = new Audio(clickSoundAsset);
 clickSound.volume = 0.5;
-
 const samplingRate = 500;
-
 const winningCombinations = [
   //Rows
   { combo: [0, 1, 2], strikeClass: "strike-row-1" },
@@ -30,6 +28,7 @@ const winningCombinations = [
   { combo: [0, 4, 8], strikeClass: "strike-diagonal-1" },
   { combo: [2, 4, 6], strikeClass: "strike-diagonal-2" },
 ];
+const storedToken = localStorage.getItem("jwtToken");
 
 function checkWinner(tiles, setStrikeClass, setGameState) {
   for (const { combo, strikeClass } of winningCombinations) {
@@ -98,7 +97,10 @@ function TicTacToe({initialState}) {
       try {
         const response = await fetch(`${API_URL}/currentGame`, {
             method: 'GET',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+              'Authorization': `Bearer ${storedToken}`,
+            }
         });
         const jsonData = await response.json();
         updateGame(jsonData);
@@ -139,7 +141,10 @@ function TicTacToe({initialState}) {
       try {
         const response = await fetch(`${API_URL}/currentGame/update/${index}`, {
             method: 'GET',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+              'Authorization': `Bearer ${storedToken}`,
+            }
         });
         const jsonData = await response.json();
         updateGame(jsonData);

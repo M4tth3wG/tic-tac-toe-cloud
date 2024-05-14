@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using TicTacToeBackend;
 using TicTacToeBackend.DataContext;
 using TicTacToeBackend.Models;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -21,7 +24,8 @@ builder.Services.AddSession(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 
-var clientDomain = Environment.GetEnvironmentVariable("API_DOMAIN");
+//var clientDomain = Environment.GetEnvironmentVariable("API_DOMAIN");
+var clientDomain = "http://localhost:3000";
 
 builder.Services.AddCors(options =>
 {
@@ -37,6 +41,12 @@ builder.Services.AddCors(options =>
 
 
 builder.Services.AddSingleton<IGamesContext, GamesRepository>();
+builder.Services.AddAuthorization();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer();
+
+builder.Services.ConfigureOptions<JwtBearerConfigureOptions>();
+
 
 var app = builder.Build();
 
@@ -51,9 +61,9 @@ app.UseCors("AllowStrictOrigin");
 
 app.UseSession();
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection(); //trouble with authentication
 
-app.MapGet("/nick/{nick}", (string nick, HttpContext httpContext) =>
+/*app.MapGet("/nick/{nick}", (string nick, HttpContext httpContext) =>
 {
     if(nick == null || nick.Trim().Length == 0)
     {
@@ -63,36 +73,41 @@ app.MapGet("/nick/{nick}", (string nick, HttpContext httpContext) =>
     httpContext.Session.SetString("nick", nick);
 
     return Results.Ok();
-});
+});*/
 
 app.MapGet("/newGame/random", (HttpContext httpContext, IGamesContext dataContext) =>
 {
-    var sessionId = httpContext.Request.Cookies[".AspNetCore.Session"];
-    var nick = httpContext.Session.GetString("nick");
+    //var sessionId = httpContext.Request.Cookies[".AspNetCore.Session"];
+    //var nick = httpContext.Session.GetString("nick");
 
-    if (sessionId == null || nick == null)
+    var user = httpContext.User;
+    var user_id = user.FindFirstValue(ClaimTypes.NameIdentifier);
+
+    if (user_id == null)
     {
         return Results.BadRequest();
     }
 
-    var game = AsignToGame(sessionId, nick, dataContext);
-    var (_, playerId) = game.Players[sessionId];
+    var game = AsignToGame(user_id, user_id, dataContext);
+    var (_, playerId) = game.Players[user_id];
 
     return Results.Ok(new {state=game.State, playerSign = Game.playerSigns[playerId] });
 })
-.WithOpenApi();
+.WithOpenApi()
+.RequireAuthorization();
 
 app.MapGet("/currentGame", (HttpContext httpContext, IGamesContext dataContext) =>
 {
-    var sessionId = httpContext.Request.Cookies[".AspNetCore.Session"];
+    var user = httpContext.User;
+    var user_id = user.FindFirstValue(ClaimTypes.NameIdentifier);
 
-    if (sessionId == null)
+    if (user_id == null)
     {
         return Results.BadRequest();
 
     }
 
-    var currentGame = GetCurrentGame(sessionId, dataContext);
+    var currentGame = GetCurrentGame(user_id, dataContext);
 
     if (currentGame == null)
     {
@@ -101,22 +116,29 @@ app.MapGet("/currentGame", (HttpContext httpContext, IGamesContext dataContext) 
 
     return Results.Ok(currentGame.State);
 })
-.WithOpenApi();
+.WithOpenApi()
+.RequireAuthorization();
 
 app.MapGet("/currentGame/update/{cellIndex}", (int cellIndex, HttpContext httpContext, IGamesContext dataContext) => 
 {
-    var sessionId = httpContext.Request.Cookies[".AspNetCore.Session"];
+    var user = httpContext.User;
+    var user_id = user.FindFirstValue(ClaimTypes.NameIdentifier);
 
-    if (sessionId == null)
+    if (user_id == null)
     {
         return Results.BadRequest();
     }
 
-    var state = UpdateGame(cellIndex, sessionId, dataContext);
+    var state = UpdateGame(cellIndex, user_id, dataContext);
 
     return state != null ? Results.Ok(state) : Results.BadRequest();
 })
-.WithOpenApi();
+.WithOpenApi()
+.RequireAuthorization();
+
+app.UseAuthentication();
+
+app.UseAuthorization();
 
 app.Run();
 
@@ -128,19 +150,19 @@ Game GetPendingGame(IGamesContext dataContext) {
     return game;
 }
 
-Game GetCurrentGame(string sessionId, IGamesContext dataContext)
+Game GetCurrentGame(string user_id, IGamesContext dataContext)
 {
     var game = dataContext.GetGames()
-        .Where(game => game.Players.ContainsKey(sessionId))
+        .Where(game => game.Players.ContainsKey(user_id))
         .LastOrDefault();
 
     return game;
 }
 
-Game AsignToGame(string sessionId, string nick, IGamesContext dataContext)
+Game AsignToGame(string user_id, string nick, IGamesContext dataContext)
 {
     var pendingGame = GetPendingGame(dataContext);
-    var currentGame = GetCurrentGame(sessionId, dataContext);
+    var currentGame = GetCurrentGame(user_id, dataContext);
 
     if (currentGame != null && currentGame.Status != GameStatusType.Finished)
     {
@@ -151,12 +173,12 @@ Game AsignToGame(string sessionId, string nick, IGamesContext dataContext)
     if (pendingGame == null)
     {
         pendingGame = new Game();
-        pendingGame.Players.Add(sessionId, (nick, PlayerType.X_Player));
+        pendingGame.Players.Add(user_id, (nick, PlayerType.X_Player));
         dataContext.AddGame(pendingGame);
     }
     else
     {
-        pendingGame.Players.Add(sessionId, (nick, PlayerType.O_Player));
+        pendingGame.Players.Add(user_id, (nick, PlayerType.O_Player));
         pendingGame.Status = GameStatusType.InProgress;
         dataContext.UpdateGame(pendingGame);
     }
@@ -164,11 +186,11 @@ Game AsignToGame(string sessionId, string nick, IGamesContext dataContext)
     return pendingGame;
 }
 
-GameState UpdateGame(int cellIndex, string sessionId, IGamesContext dataContext)
+GameState UpdateGame(int cellIndex, string user_id, IGamesContext dataContext)
 {
-    var currentGame = GetCurrentGame(sessionId, dataContext);
+    var currentGame = GetCurrentGame(user_id, dataContext);
     var currentState = currentGame.State;
-    var (_, playerId) = currentGame.Players[sessionId];
+    var (_, playerId) = currentGame.Players[user_id];
 
     if (playerId == currentState.CurrentPlayerType
         && cellIndex >= 0 && cellIndex < Game.boardSize

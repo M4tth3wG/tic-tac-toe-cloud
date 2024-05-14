@@ -4,63 +4,51 @@ import { useState, useEffect} from "react";
 import TicTacToe from "./TicTacToe.jsx";
 
 function RandomGame(){
-    const [currentNick, setCurrentNick] = useState('')
     const [initialState, setInitialState] = useState(null);
+    const [storedToken, setStoredToken] = useState(null);
 
-     useEffect(() => {
-        if (currentNick !== '') {
-            getNewRandomGame().then(result => {
+    useEffect (() => {
+        setStoredToken(localStorage.getItem("jwtToken"));
+    }, []);
+
+    function onNewRandomGame() {
+        if(!storedToken){
+            setStoredToken(localStorage.getItem("jwtToken"));
+        }
+        else{
+            getNewRandomGame(storedToken).then(result => {
                 setInitialState(result);
             }).catch(error => {
-                console.error('Error initializing game:', error);
+            console.error('Error initializing game:', error);
             });
         }
-    }, [currentNick]);
-    
-    function handleNickSubmit(nick) {
-        setNick(nick)
-            .then(result => {
-                if (result === true) {
-                    setCurrentNick(nick);
-                }
-            })
-            .catch(error => {
-                console.error('Error setting nick:', error);
-            });
-    }
+    };
 
     return (
         <div>
-            {currentNick === '' ? (
+            {!initialState ? (
                 <div>
-                    <Input placeholder="Enter nick" onSubmit={handleNickSubmit} />
+                    {/* {<Input placeholder="Enter nick" onSubmit={handleNickSubmit} />} */}
+                    <button onClick={onNewRandomGame}> New random game </button>
                 </div>
-            ) : (
-                initialState ? (
+            ) :
+            (
                     <TicTacToe initialState={initialState} />
-                ) : (
-                    <h1>Loading...</h1>
-                )
             )}
         </div>
     );
 }
 
-async function getNewRandomGame(){
+async function getNewRandomGame(storedToken){
     const response = await fetch(`${API_URL}/newGame/random`, {
             method: 'GET',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+              'Authorization': `Bearer ${storedToken}`,
+            }
         })
     const game = await response.json();
     return game;
-}
-
-async function setNick(nick) {
-    const response = await fetch(`${API_URL}/nick/${nick}`, {
-            method: 'GET',
-            credentials: 'include'
-        });
-    return response.ok;
 }
 
 export default RandomGame;
