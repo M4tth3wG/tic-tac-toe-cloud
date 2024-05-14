@@ -2,17 +2,16 @@ import "./App.css";
 import { useState, useEffect } from "react";
 import RandomGame from "./components/RandomGame";
 
-// const API_DOMAIN = process.env.REACT_APP_API_DOMAIN;
-// const API_PORT = process.env.REACT_APP_API_PORT;
-const API_DOMAIN = "http://localhost";
-const API_PORT = 32771;
+const API_DOMAIN = process.env.REACT_APP_API_DOMAIN;
+const API_PORT = process.env.REACT_APP_API_PORT;
+// const API_DOMAIN = "http://localhost";
+// const API_PORT = 32771;
 const config = require("./config");
 export const API_URL = `${API_DOMAIN}:${API_PORT}`;
 
-
 function App() {
   const [token, setToken] = useState(localStorage.getItem("jwtToken"));
-
+  
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
@@ -53,29 +52,19 @@ function App() {
   }
 
   function logOut(){
-    document.cookie = "cognito=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    document.cookie = "test=;";
     localStorage.removeItem("jwtToken");
     localStorage.removeItem("refreshToken");
     setToken("");
 
-    fetch(config.cognito.logoutUrl, {
-      method: "GET",
-      mode: "no-cors",
-      headers: {  
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((response) => {})
-      .catch((error) => {
-        console.error("Error logging out:", error);
-      });
   }
 
   return token ? (
     <div>
       <div>
-      <button onClick={logOut} class="logout-button"> Log out </button>
+        <button onClick={logOut} class="logout-button">
+          {" "}
+          Log out{" "}
+        </button>
       </div>
       <div>
         <RandomGame />

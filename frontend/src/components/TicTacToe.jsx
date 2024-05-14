@@ -103,7 +103,6 @@ function TicTacToe({initialState}) {
       try {
         const response = await fetch(`${API_URL}/currentGame`, {
             method: 'GET',
-            credentials: 'include',
             headers: {
               'Authorization': `Bearer ${storedToken}`,
             }
@@ -157,7 +156,6 @@ function TicTacToe({initialState}) {
       try {
         const response = await fetch(`${API_URL}/currentGame/update/${index}`, {
             method: 'GET',
-            credentials: 'include',
             headers: {
               'Authorization': `Bearer ${storedToken}`,
             }

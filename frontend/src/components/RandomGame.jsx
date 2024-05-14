@@ -24,7 +24,6 @@ function RandomGame(){
     async function getNewRandomGame(storedToken){
         const response = await fetch(`${API_URL}/newGame/random`, {
                 method: 'GET',
-                credentials: 'include',
                 headers: {
                 'Authorization': `Bearer ${storedToken}`,
                 }
